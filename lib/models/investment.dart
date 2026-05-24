@@ -3,18 +3,20 @@ enum InvestmentSize { small, medium, large }
 class Investment {
   final String id;
   final String name;
+  final String nameEn;
   final int purchasePrice;
   final int monthlyIncome;
   final InvestmentSize size;
-  final int stability; // 1〜3
+  final int stability;
   bool active;
   int troubleCount;
-  bool incomeSuspended; // 次ターン収入停止フラグ
-  bool incomeHalved;    // 次ターン収入半減フラグ
+  bool incomeSuspended;
+  bool incomeHalved;
 
   Investment({
     required this.id,
     required this.name,
+    required this.nameEn,
     required this.purchasePrice,
     required this.monthlyIncome,
     required this.size,
@@ -24,6 +26,8 @@ class Investment {
     this.incomeSuspended = false,
     this.incomeHalved = false,
   });
+
+  String localizedName(String locale) => locale == 'ja' ? name : nameEn;
 
   int get sellPrice {
     switch (size) {
@@ -36,25 +40,25 @@ class Investment {
     }
   }
 
-  int get maxStability {
+  int get sellPercent {
     switch (size) {
       case InvestmentSize.small:
-        return 3;
+        return 80;
       case InvestmentSize.medium:
-        return 2;
+        return 70;
       case InvestmentSize.large:
-        return 1;
+        return 60;
     }
   }
 
-  String get sizeName {
+  String get sizeKey {
     switch (size) {
       case InvestmentSize.small:
-        return '小';
+        return 'small';
       case InvestmentSize.medium:
-        return '中';
+        return 'medium';
       case InvestmentSize.large:
-        return '大';
+        return 'large';
     }
   }
 
@@ -67,6 +71,7 @@ class Investment {
     return Investment(
       id: id,
       name: name,
+      nameEn: nameEn,
       purchasePrice: purchasePrice,
       monthlyIncome: monthlyIncome,
       size: size,
@@ -81,6 +86,7 @@ class Investment {
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
+        'nameEn': nameEn,
         'purchasePrice': purchasePrice,
         'monthlyIncome': monthlyIncome,
         'size': size.index,
@@ -94,6 +100,7 @@ class Investment {
   factory Investment.fromJson(Map<String, dynamic> json) => Investment(
         id: json['id'],
         name: json['name'],
+        nameEn: json['nameEn'] ?? json['name'],
         purchasePrice: json['purchasePrice'],
         monthlyIncome: json['monthlyIncome'],
         size: InvestmentSize.values[json['size']],

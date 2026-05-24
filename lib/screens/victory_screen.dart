@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/game_provider.dart';
-import '../utils/format.dart';
+import '../providers/locale_provider.dart';
 import 'home_screen.dart';
 
 class VictoryScreen extends StatelessWidget {
@@ -10,83 +10,67 @@ class VictoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GameProvider>(
-      builder: (context, provider, _) {
-        final state = provider.state;
-        return Scaffold(
-          backgroundColor: Colors.indigo[700],
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.emoji_events_rounded,
-                      size: 80, color: Colors.amber),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'ラットレース脱出！',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
+    final game = context.watch<GameProvider>();
+    final s = context.watch<LocaleProvider>().strings;
+    final state = game.state;
+
+    return Scaffold(
+      backgroundColor: Colors.indigo[700],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.emoji_events_rounded,
+                  size: 80, color: Colors.amber),
+              const SizedBox(height: 20),
+              Text(s.victoryTitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '投資収入が生活費を超えました！\nおめでとうございます！',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 32),
-                  _resultCard(
-                    '最終現金',
-                    formatYen(state.cash),
-                    Icons.account_balance_wallet_rounded,
-                  ),
-                  const SizedBox(height: 12),
-                  _resultCard(
-                    '所有投資数',
-                    '${state.ownedInvestments.length}件',
-                    Icons.business_center_rounded,
-                  ),
-                  const SizedBox(height: 12),
-                  _resultCard(
-                    '経過ターン',
-                    '${state.turn - 1}ヶ月',
-                    Icons.calendar_today_rounded,
-                  ),
-                  const SizedBox(height: 12),
-                  _resultCard(
-                    '投資収入',
-                    formatYen(state.passiveIncome),
-                    Icons.trending_up_rounded,
-                  ),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: () {
-                      provider.resetGame();
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      foregroundColor: Colors.indigo[900],
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    child: const Text('もう一度プレイ'),
-                  ),
-                ],
+                      color: Colors.white)),
+              const SizedBox(height: 8),
+              Text(s.victoryMessage,
+                  textAlign: TextAlign.center,
+                  style:
+                      const TextStyle(fontSize: 16, color: Colors.white70)),
+              const SizedBox(height: 32),
+              _resultCard(s.finalCashLabel, s.currency(state.cash),
+                  Icons.account_balance_wallet_rounded),
+              const SizedBox(height: 12),
+              _resultCard(s.ownedInvestmentsLabel,
+                  s.ownedCount(state.ownedInvestments.length),
+                  Icons.business_center_rounded),
+              const SizedBox(height: 12),
+              _resultCard(s.turnsElapsedLabel, s.turnsValue(state.turn - 1),
+                  Icons.calendar_today_rounded),
+              const SizedBox(height: 12),
+              _resultCard(s.passiveIncomeLabel, s.currency(state.passiveIncome),
+                  Icons.trending_up_rounded),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: () {
+                  game.resetGame();
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.indigo[900],
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                child: Text(s.playAgainButton),
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

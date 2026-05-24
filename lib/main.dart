@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/game_provider.dart';
+import 'providers/locale_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -13,10 +14,13 @@ class InvestmentApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => GameProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GameProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+      ],
       child: MaterialApp(
-        title: 'キャッシュフロー学習',
+        title: 'Cash Flow Learning',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),

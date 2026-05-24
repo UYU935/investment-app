@@ -4,89 +4,90 @@ import 'package:provider/provider.dart';
 import '../data/investments_data.dart';
 import '../models/investment.dart';
 import '../providers/game_provider.dart';
-import '../utils/format.dart';
+import '../providers/locale_provider.dart';
 
 class InvestmentListScreen extends StatelessWidget {
   const InvestmentListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GameProvider>(
-      builder: (context, provider, _) {
-        final cash = provider.state.cash;
-        return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FA),
-          appBar: AppBar(
-            title: const Text('投資一覧'),
-            backgroundColor: Colors.indigo[700],
-            foregroundColor: Colors.white,
+    final game = context.watch<GameProvider>();
+    final s = context.watch<LocaleProvider>().strings;
+    final locale = context.watch<LocaleProvider>().locale;
+    final cash = game.state.cash;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: Text(s.investmentListTitle),
+        backgroundColor: Colors.indigo[700],
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Text('←', style: TextStyle(color: Colors.white, fontSize: 20)),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: Colors.indigo[50],
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(s.cashLabel, style: const TextStyle(color: Colors.black54)),
+                Text(s.currency(cash),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
           ),
-          body: Column(
-            children: [
-              Container(
-                color: Colors.indigo[50],
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('現在の現金',
-                        style: TextStyle(color: Colors.black54)),
-                    Text(formatYen(cash),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: allInvestments.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final inv = allInvestments[index];
-                    final canBuy = cash >= inv.purchasePrice;
-                    return _InvestmentCard(
-                      investment: inv,
-                      canBuy: canBuy,
-                      onBuy: () => _onBuy(context, provider, inv),
-                    );
-                  },
-                ),
-              ),
-            ],
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: allInvestments.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final inv = allInvestments[index];
+                return _InvestmentCard(
+                  investment: inv,
+                  locale: locale,
+                  canBuy: cash >= inv.purchasePrice,
+                  s: s,
+                  onBuy: () => _onBuy(context, game, inv, s, locale),
+                );
+              },
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  void _onBuy(
-      BuildContext context, GameProvider provider, Investment inv) {
+  void _onBuy(BuildContext context, GameProvider game, Investment inv,
+      dynamic s, String locale) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('${inv.name}を購入'),
-        content: Text(
-          '購入額：${formatYen(inv.purchasePrice)}\n毎月収入：+${formatYen(inv.monthlyIncome)}\n\n購入しますか？',
-        ),
+        title: Text(s.buyDialogTitle(inv.localizedName(locale))),
+        content: Text(s.buyDialogContent(
+            s.currency(inv.purchasePrice), s.currency(inv.monthlyIncome))),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('キャンセル')),
+              child: Text(s.cancelButton)),
           ElevatedButton(
             onPressed: () {
-              final ok = provider.buyInvestment(inv);
+              final ok = game.buyInvestment(inv);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      ok ? '${inv.name}を購入しました！' : '現金が足りません'),
-                  backgroundColor: ok ? Colors.green[700] : Colors.red[700],
-                ),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(ok
+                    ? s.buySuccess(inv.localizedName(locale))
+                    : s.insufficientCashSnack),
+                backgroundColor: ok ? Colors.green[700] : Colors.red[700],
+              ));
             },
-            child: const Text('購入'),
+            child: Text(s.buyButton),
           ),
         ],
       ),
@@ -96,12 +97,16 @@ class InvestmentListScreen extends StatelessWidget {
 
 class _InvestmentCard extends StatelessWidget {
   final Investment investment;
+  final String locale;
   final bool canBuy;
+  final dynamic s;
   final VoidCallback onBuy;
 
   const _InvestmentCard({
     required this.investment,
+    required this.locale,
     required this.canBuy,
+    required this.s,
     required this.onBuy,
   });
 
@@ -132,20 +137,17 @@ class _InvestmentCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: _sizeColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${investment.sizeName}投資',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold),
-                  ),
+                      color: _sizeColor,
+                      borderRadius: BorderRadius.circular(4)),
+                  child: Text(s.sizeName(investment.sizeKey),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(investment.name,
+                  child: Text(investment.localizedName(locale),
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
@@ -155,11 +157,12 @@ class _InvestmentCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _statItem('購入額', formatYen(investment.purchasePrice),
+                _stat(s.purchasePriceLabel, s.currency(investment.purchasePrice),
                     Colors.black87),
-                _statItem('毎月収入',
-                    '+${formatYen(investment.monthlyIncome)}', Colors.green[700]!),
-                _statItem('安定度', _stabilityText(investment.stability),
+                _stat(s.monthlyIncomeLabel,
+                    '+${s.currency(investment.monthlyIncome)}',
+                    Colors.green[700]!),
+                _stat(s.stabilityLabel, _stabilityText(investment.stability),
                     Colors.blue[700]!),
               ],
             ),
@@ -173,7 +176,7 @@ class _InvestmentCard extends StatelessWidget {
                   disabledBackgroundColor: Colors.grey[300],
                   foregroundColor: Colors.white,
                 ),
-                child: Text(canBuy ? '購入する' : '現金不足'),
+                child: Text(canBuy ? s.buyButton : s.insufficientCash),
               ),
             ),
           ],
@@ -182,16 +185,15 @@ class _InvestmentCard extends StatelessWidget {
     );
   }
 
-  Widget _statItem(String label, String value, Color valueColor) {
+  Widget _stat(String label, String value, Color color) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black45)),
+        Text(label,
+            style: const TextStyle(fontSize: 11, color: Colors.black45)),
         const SizedBox(height: 2),
         Text(value,
             style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: valueColor)),
+                fontSize: 13, fontWeight: FontWeight.w600, color: color)),
       ],
     );
   }

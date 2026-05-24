@@ -11,11 +11,14 @@ import '../data/events_data.dart';
 class GameProvider extends ChangeNotifier {
   GameState _state = GameState.initial();
   GameEvent? _pendingEvent;
-  List<String> _pendingTroubleMessages = [];
+  List<TroubleMessage> _pendingTroubles = [];
 
   GameState get state => _state;
   GameEvent? get pendingEvent => _pendingEvent;
-  List<String> get pendingTroubleMessages => _pendingTroubleMessages;
+  List<TroubleMessage> get pendingTroubles => _pendingTroubles;
+
+  bool get hasPendingEvents =>
+      _pendingEvent != null || _pendingTroubles.isNotEmpty;
 
   GameProvider() {
     _load();
@@ -27,48 +30,45 @@ class GameProvider extends ChangeNotifier {
     int newCash = _state.cash;
     final List<Investment> updatedInvestments =
         _state.ownedInvestments.map((inv) => inv.copyWith()).toList();
-    final List<String> troubles = [];
+    final List<TroubleMessage> troubles = [];
 
     // 市況ターン数減算
     int boomLeft = max(0, _state.marketBoomTurnsLeft - 1);
     int bustLeft = max(0, _state.marketBustTurnsLeft - 1);
 
-    // ① 投資トラブル判定 & フラグリセット
+    // ① フラグリセット
     for (int i = 0; i < updatedInvestments.length; i++) {
       final inv = updatedInvestments[i];
-      // 前ターンのフラグをリセット
       updatedInvestments[i] = inv.copyWith(
         incomeSuspended: false,
         incomeHalved: false,
       );
     }
 
-    // ② 月収計算（市況はこのターンの残りを使う）
+    // ② 月収計算
     final tempState = _state.copyWith(
       ownedInvestments: updatedInvestments,
       marketBoomTurnsLeft: boomLeft,
       marketBustTurnsLeft: bustLeft,
     );
-    final income = tempState.totalMonthlyIncome;
-    final livingCost = tempState.livingCost;
-    newCash += income - livingCost;
+    newCash += tempState.totalMonthlyIncome - tempState.livingCost;
 
-    // ③ トラブル判定（各投資）
+    // ③ トラブル判定
     for (int i = 0; i < updatedInvestments.length; i++) {
       final inv = updatedInvestments[i];
-      // トラブル確率: 安定度3→10%, 2→20%, 1→30%
-      final troubleChance = (4 - inv.stability) * 10;
+      final troubleChance = (4 - inv.stability) * 10; // 10%, 20%, 30%
       if (rng.nextInt(100) < troubleChance) {
-        // トラブル発生
         final troubleType = rng.nextInt(4);
         int newTroubleCount = inv.troubleCount + 1;
         bool suspended = false;
         bool halved = false;
 
         if (newTroubleCount >= 3) {
-          // 強制売却
           newCash += inv.sellPrice;
-          troubles.add('「${inv.name}」が3回トラブル！強制売却（${_yen(inv.sellPrice)}）');
+          troubles.add(TroubleMessage(
+            '「${inv.name}」が3回トラブル！強制売却（${_yen(inv.sellPrice)}）',
+            '"${inv.nameEn}" hit 3 troubles! Force sold (${_usd(inv.sellPrice)})',
+          ));
           updatedInvestments[i] = inv.copyWith(
             active: false,
             troubleCount: newTroubleCount,
@@ -78,20 +78,32 @@ class GameProvider extends ChangeNotifier {
             case 0:
               final cost = 10000 + rng.nextInt(5) * 5000;
               newCash -= cost;
-              troubles.add('「${inv.name}」修理費が発生（-${_yen(cost)}）');
+              troubles.add(TroubleMessage(
+                '「${inv.name}」修理費が発生（-${_yen(cost)}）',
+                '"${inv.nameEn}" repair cost (-${_usd(cost)})',
+              ));
               break;
             case 1:
               halved = true;
-              troubles.add('「${inv.name}」今月の収入が半減');
+              troubles.add(TroubleMessage(
+                '「${inv.name}」今月の収入が半減',
+                '"${inv.nameEn}" income halved this month',
+              ));
               break;
             case 2:
               suspended = true;
-              troubles.add('「${inv.name}」今月の収入が停止');
+              troubles.add(TroubleMessage(
+                '「${inv.name}」今月の収入が停止',
+                '"${inv.nameEn}" income suspended this month',
+              ));
               break;
             case 3:
               final reduced = (inv.monthlyIncome * 0.2).round();
               newCash -= reduced;
-              troubles.add('「${inv.name}」収入の一部が損失（-${_yen(reduced)}）');
+              troubles.add(TroubleMessage(
+                '「${inv.name}」収入の一部が損失（-${_yen(reduced)}）',
+                '"${inv.nameEn}" partial income loss (-${_usd(reduced)})',
+              ));
               break;
           }
           updatedInvestments[i] = inv.copyWith(
@@ -103,38 +115,32 @@ class GameProvider extends ChangeNotifier {
       }
     }
 
-    // 強制売却済みを除外
     final activeInvestments =
         updatedInvestments.where((inv) => inv.active).toList();
 
     // ④ イベント抽選
     GameEvent? event;
-    final eventRoll = rng.nextInt(4); // 0〜3、0なら無し
-    if (eventRoll != 0) {
+    if (rng.nextInt(4) != 0) {
       final typeRoll = rng.nextInt(3);
-      List<GameEvent> pool;
-      if (typeRoll == 0) {
-        pool = goodEvents;
-      } else if (typeRoll == 1) {
-        pool = expenseEvents;
-      } else {
-        pool = marketEvents;
-      }
+      final pool = typeRoll == 0
+          ? goodEvents
+          : typeRoll == 1
+              ? expenseEvents
+              : marketEvents;
       event = pool[rng.nextInt(pool.length)];
-
-      // イベント効果
       newCash += event.cashEffect;
       if (event.isMarketBoom) boomLeft = 2;
       if (event.isMarketBust) bustLeft = 2;
     }
 
-    // ⑤ 現金下限（マイナスになりすぎたら即終了はしない）
     final newEventHistory = [
       ..._state.eventHistory,
       if (event != null)
         EventRecord(
           title: event.title,
+          titleEn: event.titleEn,
           description: event.description,
+          descriptionEn: event.descriptionEn,
           type: event.type,
           turn: _state.turn,
         ),
@@ -149,12 +155,9 @@ class GameProvider extends ChangeNotifier {
       marketBustTurnsLeft: bustLeft,
     );
 
-    // ⑥ 勝利判定
-    final isVictory = newState.canEscape;
-
-    _state = newState.copyWith(isVictory: isVictory);
+    _state = newState.copyWith(isVictory: newState.canEscape);
     _pendingEvent = event;
-    _pendingTroubleMessages = troubles;
+    _pendingTroubles = troubles;
 
     _save();
     notifyListeners();
@@ -162,7 +165,7 @@ class GameProvider extends ChangeNotifier {
 
   void clearPendingEvent() {
     _pendingEvent = null;
-    _pendingTroubleMessages = [];
+    _pendingTroubles = [];
     notifyListeners();
   }
 
@@ -173,6 +176,7 @@ class GameProvider extends ChangeNotifier {
     final newInvestment = Investment(
       id: '${template.id}_${DateTime.now().millisecondsSinceEpoch}',
       name: template.name,
+      nameEn: template.nameEn,
       purchasePrice: template.purchasePrice,
       monthlyIncome: template.monthlyIncome,
       size: template.size,
@@ -191,12 +195,9 @@ class GameProvider extends ChangeNotifier {
   // ---- 投資売却 ----
   void sellInvestment(String id) {
     final inv = _state.ownedInvestments.firstWhere((e) => e.id == id);
-    final newOwned =
-        _state.ownedInvestments.where((e) => e.id != id).toList();
-
     _state = _state.copyWith(
       cash: _state.cash + inv.sellPrice,
-      ownedInvestments: newOwned,
+      ownedInvestments: _state.ownedInvestments.where((e) => e.id != id).toList(),
     );
     _save();
     notifyListeners();
@@ -206,7 +207,7 @@ class GameProvider extends ChangeNotifier {
   void resetGame() {
     _state = GameState.initial();
     _pendingEvent = null;
-    _pendingTroubleMessages = [];
+    _pendingTroubles = [];
     _save();
     notifyListeners();
   }
@@ -230,6 +231,9 @@ class GameProvider extends ChangeNotifier {
     }
   }
 
-  String _yen(int amount) =>
-      '${amount < 0 ? '-' : ''}${amount.abs().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}円';
+  String _fmt(int amount) => amount.abs()
+      .toString()
+      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
+  String _yen(int amount) => '${_fmt(amount)}円';
+  String _usd(int amount) => '¥${_fmt(amount)}';
 }

@@ -5,6 +5,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'small_01',
     name: '駐輪場オーナー',
+    nameEn: 'Bike Parking Lot',
     purchasePrice: 50000,
     monthlyIncome: 3000,
     size: InvestmentSize.small,
@@ -13,6 +14,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'small_02',
     name: '自動販売機',
+    nameEn: 'Vending Machine',
     purchasePrice: 80000,
     monthlyIncome: 5000,
     size: InvestmentSize.small,
@@ -21,6 +23,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'small_03',
     name: 'フリマ転売',
+    nameEn: 'Flea Market Resale',
     purchasePrice: 30000,
     monthlyIncome: 4000,
     size: InvestmentSize.small,
@@ -29,6 +32,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'small_04',
     name: 'ブログ広告',
+    nameEn: 'Blog Advertising',
     purchasePrice: 20000,
     monthlyIncome: 2000,
     size: InvestmentSize.small,
@@ -37,6 +41,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'small_05',
     name: '貸し倉庫（小）',
+    nameEn: 'Storage Unit (Small)',
     purchasePrice: 100000,
     monthlyIncome: 7000,
     size: InvestmentSize.small,
@@ -47,6 +52,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'mid_01',
     name: 'アパート一室',
+    nameEn: 'Apartment Room',
     purchasePrice: 300000,
     monthlyIncome: 20000,
     size: InvestmentSize.medium,
@@ -55,6 +61,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'mid_02',
     name: 'コインランドリー',
+    nameEn: 'Coin Laundry',
     purchasePrice: 250000,
     monthlyIncome: 18000,
     size: InvestmentSize.medium,
@@ -63,6 +70,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'mid_03',
     name: '太陽光発電',
+    nameEn: 'Solar Power System',
     purchasePrice: 400000,
     monthlyIncome: 25000,
     size: InvestmentSize.medium,
@@ -71,6 +79,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'mid_04',
     name: 'EC販売事業',
+    nameEn: 'E-Commerce Store',
     purchasePrice: 200000,
     monthlyIncome: 15000,
     size: InvestmentSize.medium,
@@ -79,6 +88,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'mid_05',
     name: 'カフェ投資',
+    nameEn: 'Café Investment',
     purchasePrice: 350000,
     monthlyIncome: 22000,
     size: InvestmentSize.medium,
@@ -89,6 +99,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'large_01',
     name: 'ビル一棟',
+    nameEn: 'Entire Building',
     purchasePrice: 1000000,
     monthlyIncome: 80000,
     size: InvestmentSize.large,
@@ -97,6 +108,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'large_02',
     name: 'フランチャイズ店舗',
+    nameEn: 'Franchise Store',
     purchasePrice: 800000,
     monthlyIncome: 60000,
     size: InvestmentSize.large,
@@ -105,6 +117,7 @@ final List<Investment> allInvestments = [
   Investment(
     id: 'large_03',
     name: '工場設備投資',
+    nameEn: 'Factory Equipment',
     purchasePrice: 1200000,
     monthlyIncome: 90000,
     size: InvestmentSize.large,

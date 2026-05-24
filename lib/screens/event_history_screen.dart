@@ -3,47 +3,57 @@ import 'package:provider/provider.dart';
 
 import '../models/event.dart';
 import '../providers/game_provider.dart';
+import '../providers/locale_provider.dart';
 
 class EventHistoryScreen extends StatelessWidget {
   const EventHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GameProvider>(
-      builder: (context, provider, _) {
-        final history = provider.state.eventHistory.reversed.toList();
-        return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FA),
-          appBar: AppBar(
-            title: const Text('イベント履歴'),
-            backgroundColor: Colors.indigo[700],
-            foregroundColor: Colors.white,
-          ),
-          body: history.isEmpty
-              ? const Center(
-                  child: Text('まだイベントはありません',
-                      style: TextStyle(color: Colors.black45)))
-              : ListView.separated(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: history.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 6),
-                  itemBuilder: (context, index) {
-                    final record = history[index];
-                    return _HistoryTile(record: record);
-                  },
-                ),
-        );
-      },
+    final game = context.watch<GameProvider>();
+    final localeProvider = context.watch<LocaleProvider>();
+    final s = localeProvider.strings;
+    final locale = localeProvider.locale;
+    final history = game.state.eventHistory.reversed.toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: Text(s.eventHistoryTitle),
+        backgroundColor: Colors.indigo[700],
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Text('←', style: TextStyle(color: Colors.white, fontSize: 20)),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: history.isEmpty
+          ? Center(
+              child: Text(s.noEventsMessage,
+                  style: const TextStyle(color: Colors.black45)))
+          : ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: history.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              itemBuilder: (context, index) {
+                final record = history[index];
+                return _HistoryTile(record: record, locale: locale, s: s);
+              },
+            ),
     );
   }
 }
 
 class _HistoryTile extends StatelessWidget {
-  final dynamic record;
-  const _HistoryTile({required this.record});
+  final EventRecord record;
+  final String locale;
+  final dynamic s;
+
+  const _HistoryTile(
+      {required this.record, required this.locale, required this.s});
 
   Color get _color {
-    switch (record.type as EventType) {
+    switch (record.type) {
       case EventType.good:
         return Colors.blue[700]!;
       case EventType.expense:
@@ -54,7 +64,7 @@ class _HistoryTile extends StatelessWidget {
   }
 
   IconData get _icon {
-    switch (record.type as EventType) {
+    switch (record.type) {
       case EventType.good:
         return Icons.star_rounded;
       case EventType.expense:
@@ -74,11 +84,12 @@ class _HistoryTile extends StatelessWidget {
           backgroundColor: _color.withValues(alpha: 0.15),
           child: Icon(_icon, color: _color, size: 20),
         ),
-        title: Text(record.title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(record.description,
+        title: Text(record.localizedTitle(locale),
+            style:
+                const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(record.localizedDescription(locale),
             style: const TextStyle(fontSize: 12)),
-        trailing: Text('${record.turn}ターン目',
+        trailing: Text(s.turnAt(record.turn),
             style: const TextStyle(color: Colors.black45, fontSize: 11)),
       ),
     );

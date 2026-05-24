@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/game_provider.dart';
-import '../utils/format.dart';
+import '../providers/locale_provider.dart';
 import 'investment_list_screen.dart';
 import 'owned_investments_screen.dart';
 import 'event_screen.dart';
@@ -16,17 +16,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _cashController;
   late AnimationController _passiveController;
 
-  // アニメーションの現在値（表示用）
-  int _cashDisplay = 100000;
-  int _passiveDisplay = 0;
-  // アニメーションの終端値
-  int _cashTarget = 100000;
-  int _passiveTarget = 0;
+  int _fromCash = 100000;
+  int _toCash = 100000;
+  int _fromPassive = 0;
+  int _toPassive = 0;
 
   bool _initialized = false;
 
@@ -36,12 +33,11 @@ class _HomeScreenState extends State<HomeScreen>
     _cashController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 950),
-    )..addListener(() => setState(() {}));
-
+    );
     _passiveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 950),
-    )..addListener(() => setState(() {}));
+    );
   }
 
   @override
@@ -49,10 +45,10 @@ class _HomeScreenState extends State<HomeScreen>
     super.didChangeDependencies();
     if (!_initialized) {
       final state = context.read<GameProvider>().state;
-      _cashDisplay = state.cash;
-      _cashTarget = state.cash;
-      _passiveDisplay = state.passiveIncome;
-      _passiveTarget = state.passiveIncome;
+      _fromCash = state.cash;
+      _toCash = state.cash;
+      _fromPassive = state.passiveIncome;
+      _toPassive = state.passiveIncome;
       _initialized = true;
     }
   }
@@ -64,53 +60,34 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  // イベント画面から戻った後にカウントアップ開始
-  void _animateTo(int newCash, int newPassive) {
-    final fromCash = _cashTarget;
-    final fromPassive = _passiveTarget;
-    _cashTarget = newCash;
-    _passiveTarget = newPassive;
-
-    _cashController.reset();
-    _passiveController.reset();
-
-    _cashController.addListener(() {
-      setState(() {
-        _cashDisplay = (fromCash +
-                (_cashTarget - fromCash) *
-                    CurvedAnimation(
-                            parent: _cashController, curve: Curves.easeOut)
-                        .value)
-            .round();
-      });
-    });
-    _passiveController.addListener(() {
-      setState(() {
-        _passiveDisplay = (fromPassive +
-                (_passiveTarget - fromPassive) *
-                    CurvedAnimation(
-                            parent: _passiveController, curve: Curves.easeOut)
-                        .value)
-            .round();
-      });
-    });
-
-    _cashController.forward();
-    _passiveController.forward();
+  void _startAnimation(int newCash, int newPassive) {
+    _fromCash = _toCash;
+    _fromPassive = _toPassive;
+    _toCash = newCash;
+    _toPassive = newPassive;
+    _cashController.forward(from: 0);
+    _passiveController.forward(from: 0);
   }
 
-  Future<void> _handleNextTurn(GameProvider provider) async {
-    // ターン前の値を保存
-    final oldCash = provider.state.cash;
-    final oldPassive = provider.state.passiveIncome;
+  int get _cashDisplay {
+    final t = Curves.easeOut.transform(_cashController.value);
+    return (_fromCash + (_toCash - _fromCash) * t).round();
+  }
 
-    provider.nextTurn();
+  int get _passiveDisplay {
+    final t = Curves.easeOut.transform(_passiveController.value);
+    return (_fromPassive + (_toPassive - _fromPassive) * t).round();
+  }
+
+  Future<void> _handleNextTurn(GameProvider game) async {
+    final oldCash = game.state.cash;
+    final oldPassive = game.state.passiveIncome;
+
+    game.nextTurn();
 
     if (!mounted) return;
 
-    // イベント画面を表示して待機
-    if (provider.pendingEvent != null ||
-        provider.pendingTroubleMessages.isNotEmpty) {
+    if (game.hasPendingEvents) {
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const EventScreen()),
       );
@@ -118,32 +95,39 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (!mounted) return;
 
-    // 勝利判定
-    if (provider.state.isVictory) {
+    if (game.state.isVictory) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const VictoryScreen()),
       );
       return;
     }
 
-    // イベント画面から戻った後にアニメーション開始
-    _cashDisplay = oldCash;
-    _passiveDisplay = oldPassive;
-    _animateTo(provider.state.cash, provider.state.passiveIncome);
+    setState(() {
+      _fromCash = oldCash;
+      _fromPassive = oldPassive;
+    });
+    _startAnimation(game.state.cash, game.state.passiveIncome);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GameProvider>(
-      builder: (context, provider, _) {
-        final state = provider.state;
-        final cf = state.monthlyCashFlow;
-        final cfColor = cf >= 0 ? Colors.blue[700]! : Colors.red[700]!;
+    final game = context.watch<GameProvider>();
+    final locale = context.watch<LocaleProvider>();
+    final s = locale.strings;
+    final state = game.state;
+    final cf = state.monthlyCashFlow;
+    final cfColor = cf >= 0 ? Colors.blue[700]! : Colors.red[700]!;
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([_cashController, _passiveController]),
+      builder: (context, _) {
+        final cashDisplay = _cashDisplay;
+        final passiveDisplay = _passiveDisplay;
 
         return Scaffold(
           backgroundColor: const Color(0xFFF5F7FA),
           appBar: AppBar(
-            title: const Text('キャッシュフロー学習'),
+            title: Text(s.appTitle),
             backgroundColor: Colors.indigo[700],
             foregroundColor: Colors.white,
             elevation: 0,
@@ -153,47 +137,40 @@ class _HomeScreenState extends State<HomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ターン表示
-                Center(
-                  child: Text(
-                    '第 ${state.turn} ターン',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+                // 言語切り替え＆ターン表示
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      s.turn(state.turn),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500),
                     ),
-                  ),
+                    _buildLangSelector(locale),
+                  ],
                 ),
                 const SizedBox(height: 12),
 
-                // 市況バナー
                 if (state.marketBoomTurnsLeft > 0)
-                  _buildBanner(
-                    '好景気中！ 投資収入1.5倍（残り${state.marketBoomTurnsLeft}ターン）',
-                    Colors.green[700]!,
-                  ),
+                  _buildBanner(s.marketBoom(state.marketBoomTurnsLeft), Colors.green[700]!),
                 if (state.marketBustTurnsLeft > 0)
-                  _buildBanner(
-                    '不景気中… 投資収入0.5倍（残り${state.marketBustTurnsLeft}ターン）',
-                    Colors.orange[700]!,
-                  ),
+                  _buildBanner(s.marketBust(state.marketBustTurnsLeft), Colors.orange[700]!),
 
-                // 現金カード（カウントアップアニメーション）
+                // 現金カード（アニメーション）
                 _buildCard(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('現在の現金',
-                          style: TextStyle(
-                              fontSize: 16, color: Colors.black54)),
+                      Text(s.cashLabel,
+                          style: const TextStyle(fontSize: 16, color: Colors.black54)),
                       Text(
-                        formatYen(_cashDisplay),
+                        s.currency(cashDisplay),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: _cashDisplay >= 0
-                              ? Colors.black87
-                              : Colors.red[700],
+                          color: cashDisplay >= 0 ? Colors.black87 : Colors.red[700],
                         ),
                       ),
                     ],
@@ -205,41 +182,36 @@ class _HomeScreenState extends State<HomeScreen>
                 _buildCard(
                   child: Column(
                     children: [
-                      _buildRow(
-                          '給料', formatYen(state.salary), Colors.blue[700]!),
+                      _buildRow(s.salaryLabel, s.currency(state.salary), Colors.blue[700]!),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('投資収入（パッシブ）',
-                              style: TextStyle(color: Colors.black54)),
+                          Text(s.passiveIncomeLabel,
+                              style: const TextStyle(color: Colors.black54)),
                           Text(
-                            formatYen(_passiveDisplay),
+                            s.currency(passiveDisplay),
                             style: TextStyle(
-                                color: Colors.green[700],
-                                fontWeight: FontWeight.w600),
+                                color: Colors.green[700], fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                       const Divider(height: 16),
-                      _buildRow('月収合計',
-                          formatYen(state.totalMonthlyIncome), Colors.black87),
-                      _buildRow('生活費',
-                          '-${formatYen(state.livingCost)}', Colors.red[700]!),
+                      _buildRow(s.monthlyTotalLabel,
+                          s.currency(state.totalMonthlyIncome), Colors.black87),
+                      _buildRow(s.livingCostLabel,
+                          '-${s.currency(state.livingCost)}', Colors.red[700]!),
                       const Divider(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('毎月の余裕',
-                              style: TextStyle(
+                          Text(s.monthlyCashFlowLabel,
+                              style: const TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text(
-                            formatYen(cf),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: cfColor,
-                            ),
-                          ),
+                          Text(s.currency(cf),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: cfColor)),
                         ],
                       ),
                     ],
@@ -247,22 +219,21 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(height: 8),
 
-                // 目標進捗
+                // 進捗
                 _buildCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('ラットレース脱出まで',
-                          style: TextStyle(
+                      Text(s.escapeGoalLabel,
+                          style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 14)),
                       const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('投資収入 ${formatYen(state.passiveIncome)}',
-                              style: const TextStyle(
-                                  color: Colors.green, fontSize: 13)),
-                          Text('目標 ${formatYen(state.livingCost)}',
+                          Text(s.passiveProgress(s.currency(state.passiveIncome)),
+                              style: const TextStyle(color: Colors.green, fontSize: 13)),
+                          Text(s.goalAmount(s.currency(state.livingCost)),
                               style: const TextStyle(
                                   color: Colors.black54, fontSize: 13)),
                         ],
@@ -275,8 +246,8 @@ class _HomeScreenState extends State<HomeScreen>
                               .clamp(0.0, 1.0),
                           minHeight: 10,
                           backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.green[600]!),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.green[600]!),
                         ),
                       ),
                     ],
@@ -284,26 +255,22 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(height: 8),
 
-                // 所有投資数
                 _buildCard(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('所有投資数',
-                          style: TextStyle(color: Colors.black54)),
-                      Text(
-                        '${state.ownedInvestments.length} 件',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
+                      Text(s.ownedCountLabel,
+                          style: const TextStyle(color: Colors.black54)),
+                      Text(s.ownedCount(state.ownedInvestments.length),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // 次の月へボタン
                 ElevatedButton(
-                  onPressed: () => _handleNextTurn(provider),
+                  onPressed: () => _handleNextTurn(game),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.indigo[700],
                     foregroundColor: Colors.white,
@@ -311,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen>
                     textStyle: const TextStyle(
                         fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  child: const Text('次の月へ進む'),
+                  child: Text(s.nextMonthButton),
                 ),
                 const SizedBox(height: 10),
 
@@ -319,31 +286,23 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  const InvestmentListScreen()),
-                        ),
+                        onPressed: () => Navigator.push(context,
+                            MaterialPageRoute(
+                                builder: (_) => const InvestmentListScreen())),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text('投資を見る'),
+                            padding: const EdgeInsets.symmetric(vertical: 14)),
+                        child: Text(s.viewInvestmentsButton),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  const OwnedInvestmentsScreen()),
-                        ),
+                        onPressed: () => Navigator.push(context,
+                            MaterialPageRoute(
+                                builder: (_) => const OwnedInvestmentsScreen())),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text('所有投資'),
+                            padding: const EdgeInsets.symmetric(vertical: 14)),
+                        child: Text(s.myInvestmentsButton),
                       ),
                     ),
                   ],
@@ -351,20 +310,17 @@ class _HomeScreenState extends State<HomeScreen>
                 const SizedBox(height: 10),
 
                 TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const EventHistoryScreen()),
-                  ),
-                  child: const Text('イベント履歴'),
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(
+                          builder: (_) => const EventHistoryScreen())),
+                  child: Text(s.eventHistoryButton),
                 ),
                 const SizedBox(height: 4),
 
                 TextButton(
-                  onPressed: () => _confirmReset(context, provider),
-                  child: Text('リセット',
-                      style: TextStyle(
-                          color: Colors.grey[500], fontSize: 12)),
+                  onPressed: () => _confirmReset(context, game, s),
+                  child: Text(s.resetButton,
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                 ),
               ],
             ),
@@ -374,17 +330,42 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget _buildLangSelector(LocaleProvider locale) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: ['ja', 'en'].map((code) {
+        final selected = locale.locale == code;
+        return GestureDetector(
+          onTap: () => locale.setLocale(code),
+          child: Container(
+            margin: const EdgeInsets.only(left: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: selected ? Colors.indigo[700] : Colors.grey[200],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              code == 'ja' ? 'JP' : 'EN',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: selected ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildBanner(String text, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration:
+          BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
       child: Text(text,
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center),
     );
   }
@@ -393,10 +374,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: child,
-      ),
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
     );
   }
 
@@ -408,36 +386,38 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           Text(label, style: const TextStyle(color: Colors.black54)),
           Text(value,
-              style: TextStyle(
-                  color: valueColor, fontWeight: FontWeight.w600)),
+              style:
+                  TextStyle(color: valueColor, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  void _confirmReset(BuildContext context, GameProvider provider) {
+  void _confirmReset(BuildContext context, GameProvider game, dynamic s) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('リセット確認'),
-        content: const Text('ゲームをリセットしますか？\n進行状況は消えます。'),
+        title: Text(s.resetConfirmTitle),
+        content: Text(s.resetConfirmMessage),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('キャンセル')),
+              child: Text(s.cancelButton)),
           TextButton(
             onPressed: () {
-              provider.resetGame();
+              game.resetGame();
               setState(() {
-                _cashDisplay = 100000;
-                _cashTarget = 100000;
-                _passiveDisplay = 0;
-                _passiveTarget = 0;
+                _fromCash = 100000;
+                _toCash = 100000;
+                _fromPassive = 0;
+                _toPassive = 0;
               });
+              _cashController.reset();
+              _passiveController.reset();
               Navigator.pop(context);
             },
-            child: const Text('リセット',
-                style: TextStyle(color: Colors.red)),
+            child: Text(s.resetButton,
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
