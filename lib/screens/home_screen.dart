@@ -60,9 +60,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _startAnimation(int newCash, int newPassive) {
-    _fromCash = _toCash;
-    _fromPassive = _toPassive;
+  void _startAnimation(int fromCash, int fromPassive, int newCash, int newPassive) {
+    _fromCash = fromCash;
+    _fromPassive = fromPassive;
     _toCash = newCash;
     _toPassive = newPassive;
     _cashController.forward(from: 0);
@@ -102,11 +102,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       return;
     }
 
-    setState(() {
-      _fromCash = oldCash;
-      _fromPassive = oldPassive;
-    });
-    _startAnimation(game.state.cash, game.state.passiveIncome);
+    _startAnimation(oldCash, oldPassive, game.state.cash, game.state.passiveIncome);
   }
 
   @override
@@ -117,6 +113,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final state = game.state;
     final cf = state.monthlyCashFlow;
     final cfColor = cf >= 0 ? Colors.blue[700]! : Colors.red[700]!;
+
+    if (!_cashController.isAnimating) {
+      _fromCash = state.cash;
+      _toCash = state.cash;
+    }
+    if (!_passiveController.isAnimating) {
+      _fromPassive = state.passiveIncome;
+      _toPassive = state.passiveIncome;
+    }
 
     return AnimatedBuilder(
       animation: Listenable.merge([_cashController, _passiveController]),
