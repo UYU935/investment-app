@@ -20,8 +20,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _cashController;
   late AnimationController _passiveController;
 
-  int _fromCash = 100000;
-  int _toCash = 100000;
+  int _fromCash = 100;
+  int _toCash = 100;
   int _fromPassive = 0;
   int _toPassive = 0;
 
@@ -412,8 +412,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             onPressed: () {
               game.resetGame();
               setState(() {
-                _fromCash = 100000;
-                _toCash = 100000;
+                _fromCash = 100;
+                _toCash = 100;
                 _fromPassive = 0;
                 _toPassive = 0;
               });

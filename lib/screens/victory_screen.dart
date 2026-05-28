@@ -23,7 +23,7 @@ class VictoryScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.emoji_events_rounded,
+              const Icon(Icons.rocket_launch_rounded,
                   size: 80, color: Colors.amber),
               const SizedBox(height: 20),
               Text(s.victoryTitle,

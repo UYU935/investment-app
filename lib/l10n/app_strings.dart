@@ -3,27 +3,26 @@ class AppStrings {
   const AppStrings(this.locale);
   bool get isJa => locale == 'ja';
 
-  // 通貨フォーマット
+  // 通貨フォーマット（億円単位）
   String currency(int amount) {
     if (isJa) {
       final abs = amount.abs();
       final formatted = abs
           .toString()
           .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
-      return amount < 0 ? '-$formatted円' : '$formatted円';
+      return amount < 0 ? '-${formatted}億円' : '${formatted}億円';
     } else {
-      // 円→ドル換算（1USD=158円）、10ドル単位で切り上げ
-      final usd = (amount / 158 / 10).ceil() * 10;
-      final abs = usd.abs();
+      // 億円→十億ドル換算（1B USD ≒ 150億円）
+      final abs = amount.abs();
       final formatted = abs
           .toString()
           .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
-      return amount < 0 ? '-\$$formatted' : '\$$formatted';
+      return amount < 0 ? '-\$${formatted}B' : '\$${formatted}B';
     }
   }
 
   // アプリ全般
-  String get appTitle => isJa ? '余裕設計ゲーム' : 'Financial Freedom Game';
+  String get appTitle => isJa ? 'STAR FRONTIER 投資計画' : 'STAR FRONTIER';
   String get cancelButton => isJa ? 'キャンセル' : 'Cancel';
   String get okButton => 'OK';
   String get resetButton => isJa ? 'リセット' : 'Reset';
@@ -32,83 +31,84 @@ class AppStrings {
       isJa ? 'ゲームをリセットしますか？\n進行状況は消えます。' : 'Reset the game?\nAll progress will be lost.';
 
   // ホーム画面
-  String turn(int n) => isJa ? '第 $n ターン' : 'Month $n';
+  String turn(int n) => isJa ? '第 $n 開発期' : 'Period $n';
   String marketBoom(int n) =>
-      isJa ? '好景気中！ 投資収入1.5倍（残り$nターン）' : 'Boom! Passive income ×1.5 ($n turns left)';
+      isJa ? '宇宙産業ブーム中！ 継続収益1.5倍（残り$n開発期）' : 'Space Boom! Income ×1.5 ($n periods left)';
   String marketBust(int n) =>
-      isJa ? '不景気中… 投資収入0.5倍（残り$nターン）' : 'Recession... Passive income ×0.5 ($n turns left)';
-  String get cashLabel => isJa ? '現在の現金' : 'Current Cash';
-  String get salaryLabel => isJa ? '給料' : 'Salary';
-  String get passiveIncomeLabel => isJa ? '投資収入（パッシブ）' : 'Passive Income';
-  String get monthlyTotalLabel => isJa ? '月収合計' : 'Total Income';
-  String get livingCostLabel => isJa ? '生活費' : 'Living Cost';
-  String get monthlyCashFlowLabel => isJa ? '毎月の余裕' : 'Monthly Cash Flow';
-  String get escapeGoalLabel => isJa ? '経済的自由達成まで' : 'Path to Financial Freedom';
+      isJa ? '開発停滞中… 継続収益0.5倍（残り$n開発期）' : 'Slowdown... Income ×0.5 ($n periods left)';
+  String get cashLabel => isJa ? '現在資金' : 'Current Funds';
+  String get salaryLabel => isJa ? '基礎予算' : 'Base Budget';
+  String get passiveIncomeLabel => isJa ? '継続収益' : 'Recurring Income';
+  String get monthlyTotalLabel => isJa ? '収益合計' : 'Total Income';
+  String get livingCostLabel => isJa ? '運営コスト' : 'Operating Cost';
+  String get monthlyCashFlowLabel => isJa ? '毎期の開発余力' : 'Development Margin';
+  String get escapeGoalLabel => isJa ? '宇宙文明レベル到達まで' : 'Path to Space Civilization';
   String passiveProgress(String passive) =>
-      isJa ? '投資収入 $passive' : 'Passive $passive';
+      isJa ? '継続収益 $passive' : 'Recurring $passive';
   String goalAmount(String amount) => isJa ? '目標 $amount' : 'Goal $amount';
-  String get ownedCountLabel => isJa ? '所有投資数' : 'Investments Owned';
-  String ownedCount(int n) => isJa ? '$n 件' : '$n item${n == 1 ? '' : 's'}';
-  String get nextMonthButton => isJa ? '次の月へ進む' : 'Next Month';
-  String get viewInvestmentsButton => isJa ? '投資を見る' : 'View Investments';
-  String get myInvestmentsButton => isJa ? '所有投資' : 'My Investments';
+  String get ownedCountLabel => isJa ? '保有プロジェクト' : 'Projects Owned';
+  String ownedCount(int n) => isJa ? '$n 件' : '$n project${n == 1 ? '' : 's'}';
+  String get nextMonthButton => isJa ? '次の開発期へ' : 'Next Period';
+  String get viewInvestmentsButton => isJa ? '開発プロジェクトを見る' : 'View Projects';
+  String get myInvestmentsButton => isJa ? '保有プロジェクト' : 'My Projects';
   String get eventHistoryButton => isJa ? 'イベント履歴' : 'Event History';
 
   // 投資一覧
-  String get investmentListTitle => isJa ? '投資一覧' : 'Investments';
-  String get purchasePriceLabel => isJa ? '購入額' : 'Price';
-  String get monthlyIncomeLabel => isJa ? '毎月収入' : 'Monthly';
+  String get investmentListTitle => isJa ? '開発プロジェクト一覧' : 'Development Projects';
+  String get purchasePriceLabel => isJa ? '開発コスト' : 'Dev Cost';
+  String get monthlyIncomeLabel => isJa ? '継続収益' : 'Recurring';
   String get stabilityLabel => isJa ? '安定度' : 'Stability';
-  String get buyButton => isJa ? '購入する' : 'Buy';
-  String get insufficientCash => isJa ? '現金不足' : 'Not Enough Cash';
+  String get buyButton => isJa ? '着手する' : 'Start';
+  String get insufficientCash => isJa ? '資金不足' : 'Insufficient Funds';
   String sizeName(String size) {
-    if (size == 'small') return isJa ? '小投資' : 'Small';
-    if (size == 'medium') return isJa ? '中投資' : 'Medium';
-    return isJa ? '大投資' : 'Large';
+    if (size == 'small') return isJa ? '小型' : 'Small';
+    if (size == 'medium') return isJa ? '中型' : 'Medium';
+    return isJa ? '大型' : 'Large';
   }
-  String buyDialogTitle(String name) => isJa ? '$nameを購入' : 'Buy $name';
+  String buyDialogTitle(String name) => isJa ? '$nameに着手' : 'Start $name';
   String buyDialogContent(String price, String income) => isJa
-      ? '購入額：$price\n毎月収入：+$income\n\n購入しますか？'
-      : 'Price: $price\nMonthly income: +$income\n\nConfirm purchase?';
-  String buySuccess(String name) => isJa ? '$nameを購入しました！' : 'Purchased $name!';
-  String get insufficientCashSnack => isJa ? '現金が足りません' : 'Not enough cash';
+      ? '開発コスト：$price\n継続収益：+$income / 開発期\n\n着手しますか？'
+      : 'Dev Cost: $price\nRecurring income: +$income / period\n\nConfirm?';
+  String buySuccess(String name) => isJa ? '$nameに着手しました！' : 'Started $name!';
+  String get insufficientCashSnack => isJa ? '資金が足りません' : 'Not enough funds';
 
   // 所有投資
-  String get myInvestmentsTitle => isJa ? '所有投資' : 'My Investments';
+  String get myInvestmentsTitle => isJa ? '保有プロジェクト' : 'My Projects';
   String get noInvestmentsMessage => isJa
-      ? '所有している投資はありません。\n「投資を見る」から購入しましょう。'
-      : 'No investments owned.\nGo to "View Investments" to buy some.';
+      ? '保有しているプロジェクトはありません。\n「開発プロジェクトを見る」から着手しましょう。'
+      : 'No projects owned.\nGo to "View Projects" to start one.';
   String troubleCount(int n) => isJa ? 'トラブル$n/3' : 'Trouble $n/3';
-  String get incomeSuspendedLabel => isJa ? '今月：収入停止中' : 'This month: income suspended';
-  String get incomeHalvedLabel => isJa ? '今月：収入半減中' : 'This month: income halved';
-  String get sellPriceLabel => isJa ? '売却額' : 'Sell Price';
-  String get sellButton => isJa ? '売却する' : 'Sell';
-  String sellDialogTitle(String name) => isJa ? '$nameを売却' : 'Sell $name';
+  String get incomeSuspendedLabel => isJa ? '今期：収益停止中' : 'This period: income suspended';
+  String get incomeHalvedLabel => isJa ? '今期：収益半減中' : 'This period: income halved';
+  String get sellPriceLabel => isJa ? '撤退回収額' : 'Exit Value';
+  String get sellButton => isJa ? '撤退・売却' : 'Exit';
+  String sellDialogTitle(String name) => isJa ? '$nameから撤退' : 'Exit $name';
   String sellDialogContent(String price, int pct) => isJa
-      ? '売却価格：$price\n（購入額の$pct%）\n\n売却しますか？'
-      : 'Sell price: $price\n($pct% of purchase price)\n\nConfirm sale?';
+      ? 'このプロジェクトを縮小・売却しますか？\n回収額：$price（開発コストの$pct%）\n大型開発ほど途中撤退の損失が大きくなります。'
+      : 'Sell/exit this project?\nExit value: $price ($pct% of dev cost)\nLarger projects lose more on early exit.';
   String sellSuccess(String name, String price) =>
-      isJa ? '$nameを$price で売却しました' : 'Sold $name for $price';
+      isJa ? '$nameから撤退し、$price を回収しました' : 'Exited $name, recovered $price';
 
   // イベント画面
-  String get eventScreenTitle => isJa ? '今月のできごと' : "This Month's Events";
-  String get troubleHeading => isJa ? '投資トラブル' : 'Investment Trouble';
-  String get noEventTitle => isJa ? '今月は特にイベントなし' : 'No Events This Month';
+  String get eventScreenTitle => isJa ? '今期のできごと' : "This Period's Events";
+  String get troubleHeading => isJa ? 'プロジェクトトラブル' : 'Project Trouble';
+  String get noEventTitle => isJa ? '今期は特にイベントなし' : 'No Events This Period';
   String get noEventMessage =>
-      isJa ? '平和な月でした。\n引き続き投資を積み上げましょう。' : 'A peaceful month.\nKeep building your investments!';
+      isJa ? '順調な開発期でした。\n引き続きプロジェクトを積み上げましょう。' : 'A smooth period.\nKeep building your projects!';
 
   // 勝利画面
-  String get victoryTitle => isJa ? '経済的自由を達成！' : 'Financial Freedom Achieved!';
+  String get victoryTitle => isJa ? '宇宙文明レベル到達！' : 'Space Civilization Achieved!';
   String get victoryMessage =>
-      isJa ? '投資収入が生活費を超えました！\nおめでとうございます！' : 'Passive income exceeds living costs!\nCongratulations!';
-  String get finalCashLabel => isJa ? '最終現金' : 'Final Cash';
-  String get ownedInvestmentsLabel => isJa ? '所有投資数' : 'Investments Owned';
-  String get turnsElapsedLabel => isJa ? '経過ターン' : 'Months Elapsed';
-  String turnsValue(int n) => isJa ? '$nヶ月' : '$n months';
+      isJa ? '継続収益だけで宇宙開発を続けられる体制が完成しました。\nあなたのチームは、地球の外へ広がる未来文明の第一歩を築きました。'
+           : 'You can now sustain space development through recurring income alone.\nYour team has laid the foundation for a civilization beyond Earth.';
+  String get finalCashLabel => isJa ? '最終資金' : 'Final Funds';
+  String get ownedInvestmentsLabel => isJa ? '保有プロジェクト数' : 'Projects Owned';
+  String get turnsElapsedLabel => isJa ? '到達までの開発期' : 'Periods Elapsed';
+  String turnsValue(int n) => isJa ? '$n期' : '$n periods';
   String get playAgainButton => isJa ? 'もう一度プレイ' : 'Play Again';
 
   // イベント履歴
   String get eventHistoryTitle => isJa ? 'イベント履歴' : 'Event History';
   String get noEventsMessage => isJa ? 'まだイベントはありません' : 'No events yet';
-  String turnAt(int n) => isJa ? '$nターン目' : 'Month $n';
+  String turnAt(int n) => isJa ? '第$n開発期' : 'Period $n';
 }

@@ -66,8 +66,8 @@ class GameProvider extends ChangeNotifier {
         if (newTroubleCount >= 3) {
           newCash += inv.sellPrice;
           troubles.add(TroubleMessage(
-            '「${inv.name}」が3回トラブル！強制売却（${_yen(inv.sellPrice)}）',
-            '"${inv.nameEn}" hit 3 troubles! Force sold (${_usd(inv.sellPrice)})',
+            '「${inv.name}」が3回トラブル！強制撤退（${_oku(inv.sellPrice)}回収）',
+            '"${inv.nameEn}" hit 3 troubles! Force exited (recovered ${_bil(inv.sellPrice)})',
           ));
           updatedInvestments[i] = inv.copyWith(
             active: false,
@@ -76,33 +76,33 @@ class GameProvider extends ChangeNotifier {
         } else {
           switch (troubleType) {
             case 0:
-              final cost = 10000 + rng.nextInt(5) * 5000;
+              final cost = 5 + rng.nextInt(5) * 5;
               newCash -= cost;
               troubles.add(TroubleMessage(
-                '「${inv.name}」修理費が発生（-${_yen(cost)}）',
-                '"${inv.nameEn}" repair cost (-${_usd(cost)})',
+                '「${inv.name}」緊急対応費が発生（-${_oku(cost)}）',
+                '"${inv.nameEn}" emergency cost (-${_bil(cost)})',
               ));
               break;
             case 1:
               halved = true;
               troubles.add(TroubleMessage(
-                '「${inv.name}」今月の収入が半減',
-                '"${inv.nameEn}" income halved this month',
+                '「${inv.name}」今期の継続収益が半減',
+                '"${inv.nameEn}" recurring income halved this period',
               ));
               break;
             case 2:
               suspended = true;
               troubles.add(TroubleMessage(
-                '「${inv.name}」今月の収入が停止',
-                '"${inv.nameEn}" income suspended this month',
+                '「${inv.name}」今期の継続収益が停止',
+                '"${inv.nameEn}" recurring income suspended this period',
               ));
               break;
             case 3:
               final reduced = (inv.monthlyIncome * 0.2).round();
               newCash -= reduced;
               troubles.add(TroubleMessage(
-                '「${inv.name}」収入の一部が損失（-${_yen(reduced)}）',
-                '"${inv.nameEn}" partial income loss (-${_usd(reduced)})',
+                '「${inv.name}」収益の一部が損失（-${_oku(reduced)}）',
+                '"${inv.nameEn}" partial income loss (-${_bil(reduced)})',
               ));
               break;
           }
@@ -234,6 +234,6 @@ class GameProvider extends ChangeNotifier {
   String _fmt(int amount) => amount.abs()
       .toString()
       .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
-  String _yen(int amount) => '${_fmt(amount)}円';
-  String _usd(int amount) => '¥${_fmt(amount)}';
+  String _oku(int amount) => '${_fmt(amount)}億円';
+  String _bil(int amount) => '\$${_fmt(amount)}B';
 }

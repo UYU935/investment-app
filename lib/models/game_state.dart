@@ -27,9 +27,9 @@ class GameState {
   });
 
   factory GameState.initial() => const GameState(
-        cash: 100000,
-        salary: 100000,
-        livingCost: 80000,
+        cash: 100,
+        salary: 100,
+        livingCost: 80,
         turn: 1,
         ownedInvestments: [],
         eventHistory: [],
