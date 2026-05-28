@@ -46,6 +46,23 @@ class AppStrings {
   String passiveProgress(String passive) =>
       isJa ? '継続収益 $passive' : 'Recurring $passive';
   String goalAmount(String amount) => isJa ? '目標 $amount' : 'Goal $amount';
+
+  // 宇宙開発レベル
+  String get spaceLevelLabel => isJa ? '宇宙開発レベル' : 'Space Dev Level';
+  String spaceLevelText(int level) {
+    switch (level) {
+      case 2:
+        return isJa ? 'レベル2（衛星通信ネットワークを開発）' : 'Level 2 (Satellite Network built)';
+      case 3:
+        return isJa ? 'レベル3（月面基地アルテミス街区を開発）' : 'Level 3 (Lunar Base built)';
+      case 4:
+        return isJa ? 'レベル4（火星開発フロンティアを開発）' : 'Level 4 (Mars Frontier built)';
+      default:
+        return isJa ? 'レベル1' : 'Level 1';
+    }
+  }
+  String colonyProgress(int count) =>
+      isJa ? 'スペースコロニー建設: $count / 5基' : 'Space Colonies: $count / 5';
   String get ownedCountLabel => isJa ? '保有プロジェクト' : 'Projects Owned';
   String ownedCount(int n) => isJa ? '$n 件' : '$n project${n == 1 ? '' : 's'}';
   String get nextMonthButton => isJa ? '次の開発期へ' : 'Next Period';
@@ -99,8 +116,8 @@ class AppStrings {
   // 勝利画面
   String get victoryTitle => isJa ? '宇宙文明レベル到達！' : 'Space Civilization Achieved!';
   String get victoryMessage =>
-      isJa ? '継続収益だけで宇宙開発を続けられる体制が完成しました。\nあなたのチームは、地球の外へ広がる未来文明の第一歩を築きました。'
-           : 'You can now sustain space development through recurring income alone.\nYour team has laid the foundation for a civilization beyond Earth.';
+      isJa ? 'スペースコロニーを5基建設し、宇宙移住文明が誕生しました。\nあなたのチームは、地球の外へ広がる未来文明の第一歩を築きました。'
+           : 'Five Space Colonies built — a space-faring civilization is born.\nYour team has laid the foundation for humanity beyond Earth.';
   String get finalCashLabel => isJa ? '最終資金' : 'Final Funds';
   String get ownedInvestmentsLabel => isJa ? '保有プロジェクト数' : 'Projects Owned';
   String get turnsElapsedLabel => isJa ? '到達までの開発期' : 'Periods Elapsed';

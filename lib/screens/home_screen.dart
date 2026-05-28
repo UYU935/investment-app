@@ -224,37 +224,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 8),
 
-                // 進捗
+                // 宇宙開発レベル
                 _buildCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(s.escapeGoalLabel,
+                      Text(s.spaceLevelLabel,
                           style: const TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 14)),
                       const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(s.passiveProgress(s.currency(state.passiveIncome)),
-                              style: const TextStyle(color: Colors.green, fontSize: 13)),
-                          Text(s.goalAmount(s.currency(state.livingCost)),
-                              style: const TextStyle(
-                                  color: Colors.black54, fontSize: 13)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: (state.passiveIncome / state.livingCost)
-                              .clamp(0.0, 1.0),
-                          minHeight: 10,
-                          backgroundColor: Colors.grey[200],
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.green[600]!),
+                      Text(
+                        s.spaceLevelText(state.spaceDevelopmentLevel),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo[700],
                         ),
                       ),
+                      if (state.spaceDevelopmentLevel == 4) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          s.colonyProgress(state.spaceColonyCount),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.deepPurple[600],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

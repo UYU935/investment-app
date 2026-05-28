@@ -51,7 +51,19 @@ class GameState {
 
   int get totalMonthlyIncome => salary + passiveIncome;
   int get monthlyCashFlow => totalMonthlyIncome - livingCost;
-  bool get canEscape => passiveIncome >= livingCost;
+
+  int get spaceColonyCount =>
+      ownedInvestments.where((inv) => inv.id.startsWith('colony')).length;
+
+  bool get canEscape => spaceColonyCount >= 5;
+
+  // 宇宙開発レベル: 1〜4
+  int get spaceDevelopmentLevel {
+    if (ownedInvestments.any((inv) => inv.id.startsWith('b06'))) return 4;
+    if (ownedInvestments.any((inv) => inv.id.startsWith('b05'))) return 3;
+    if (ownedInvestments.any((inv) => inv.id.startsWith('m01'))) return 2;
+    return 1;
+  }
 
   GameState copyWith({
     int? cash,

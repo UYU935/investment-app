@@ -132,4 +132,13 @@ final List<Investment> allInvestments = [
     size: InvestmentSize.large,
     stability: 1,
   ),
+  Investment(
+    id: 'colony',
+    name: 'スペースコロニー建設・移住',
+    nameEn: 'Space Colony Construction & Settlement',
+    purchasePrice: 1000,
+    monthlyIncome: 100,
+    size: InvestmentSize.large,
+    stability: 1,
+  ),
 ];
