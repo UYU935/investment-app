@@ -242,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       if (state.spaceDevelopmentLevel == 4) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           s.colonyProgress(state.spaceColonyCount),
                           style: TextStyle(
@@ -252,6 +252,60 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                       ],
+                      const SizedBox(height: 6),
+                      Text(
+                        s.nextLevelHint(state.spaceDevelopmentLevel, state.spaceColonyCount),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // 継続収益バー
+                _buildCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(s.incomeBarLabel,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            s.incomeBarDetail(
+                              s.currency(passiveDisplay),
+                              s.currency(state.livingCost),
+                            ),
+                            style: const TextStyle(
+                                color: Colors.green, fontSize: 13),
+                          ),
+                          Text(
+                            '${((passiveDisplay / state.livingCost) * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                            style: TextStyle(
+                                color: Colors.green[700],
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: (passiveDisplay / state.livingCost)
+                              .clamp(0.0, 1.0),
+                          minHeight: 10,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.green[600]!),
+                        ),
+                      ),
                     ],
                   ),
                 ),

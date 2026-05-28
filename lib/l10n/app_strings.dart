@@ -63,6 +63,29 @@ class AppStrings {
   }
   String colonyProgress(int count) =>
       isJa ? 'スペースコロニー建設: $count / 5基' : 'Space Colonies: $count / 5';
+
+  String nextLevelHint(int currentLevel, int colonyCount) {
+    switch (currentLevel) {
+      case 1:
+        return isJa ? '次のレベルには「衛星通信ネットワーク」の開発が必要' : 'Next level: build Satellite Network';
+      case 2:
+        return isJa ? '次のレベルには「月面基地アルテミス街区」の開発が必要' : 'Next level: build Lunar Base';
+      case 3:
+        return isJa ? '次のレベルには「火星開発フロンティア」の開発が必要' : 'Next level: build Mars Frontier';
+      case 4:
+        final remaining = 5 - colonyCount;
+        return isJa
+            ? '宇宙文明レベルへ：スペースコロニーをあと$remaining基開発'
+            : 'Space Civilization: build $remaining more Space Colonies';
+      default:
+        return '';
+    }
+  }
+
+  // 継続収益バー
+  String get incomeBarLabel => isJa ? '継続収益の進捗' : 'Recurring Income Progress';
+  String incomeBarDetail(String passive, String goal) =>
+      isJa ? '$passive ／ 目標 $goal' : '$passive / Goal $goal';
   String get ownedCountLabel => isJa ? '保有プロジェクト' : 'Projects Owned';
   String ownedCount(int n) => isJa ? '$n 件' : '$n project${n == 1 ? '' : 's'}';
   String get nextMonthButton => isJa ? '次の開発期へ' : 'Next Period';
