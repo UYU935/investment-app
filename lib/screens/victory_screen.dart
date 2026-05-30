@@ -15,6 +15,7 @@ class VictoryScreen extends StatefulWidget {
 
 class _VictoryScreenState extends State<VictoryScreen> {
   bool _bgVisible = false;
+  bool _overlayDark = false; // ロゴ登場と同時に暗くなる
 
   // 要素ごとの表示フラグ
   // 0: ロゴ  1: タイトル  2: メッセージ説明
@@ -36,8 +37,16 @@ class _VictoryScreenState extends State<VictoryScreen> {
     // 背景5秒 + 待機3秒
     await Future.delayed(const Duration(seconds: 8));
 
-    // 各要素を順番に：1秒フェードイン → 1秒待機 → 次へ
-    for (int i = 0; i < _visible.length; i++) {
+    // ロゴ登場と同時にオーバーレイを暗くする
+    if (!mounted) return;
+    setState(() {
+      _overlayDark = true;
+      _visible[0] = true;
+    });
+    await Future.delayed(const Duration(seconds: 2));
+
+    // 残り要素を順番に：1秒フェードイン → 1秒待機 → 次へ
+    for (int i = 1; i < _visible.length; i++) {
       if (!mounted) return;
       setState(() => _visible[i] = true);
       await Future.delayed(const Duration(seconds: 2));
@@ -59,10 +68,10 @@ class _VictoryScreenState extends State<VictoryScreen> {
           duration: const Duration(seconds: 5),
           child: Image.asset(SpaceAssets.bgVictory, fit: BoxFit.cover),
         ),
-        // 暗いオーバーレイも背景と同じタイミングで
+        // 暗いオーバーレイ：ロゴ登場時に1.5秒かけて暗くなる
         AnimatedOpacity(
-          opacity: _bgVisible ? 1.0 : 0.0,
-          duration: const Duration(seconds: 5),
+          opacity: _overlayDark ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 1500),
           child: Container(color: const Color(0xBB000000)),
         ),
         // コンテンツ
