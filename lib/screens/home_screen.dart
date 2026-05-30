@@ -332,7 +332,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             fontSize: 11, color: Colors.white38)),
                                   ],
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 4),
+                                // 次のレベルへのヒント
+                                Text(
+                                  s.nextLevelHint(
+                                      state.spaceDevelopmentLevel, state.spaceColonyCount),
+                                  style: const TextStyle(fontSize: 10, color: Colors.white38),
+                                ),
+                                const SizedBox(height: 8),
+                                // 進捗バーの説明
+                                Text(
+                                  s.incomeBarDetail(
+                                    s.currency(passiveDisplay),
+                                    s.currency(state.livingCost),
+                                  ),
+                                  style: const TextStyle(fontSize: 10, color: Colors.white38),
+                                ),
+                                const SizedBox(height: 4),
+                                // 進捗バー
                                 Row(
                                   children: [
                                     Expanded(
@@ -357,12 +374,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           fontWeight: FontWeight.w600),
                                     ),
                                   ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  s.nextLevelHint(
-                                      state.spaceDevelopmentLevel, state.spaceColonyCount),
-                                  style: const TextStyle(fontSize: 10, color: Colors.white30),
                                 ),
                               ],
                             ),
