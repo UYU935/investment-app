@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   bool _initialized = false;
   int _lastLevel = 1;
+  bool _uiHidden = false;
 
   @override
   void initState() {
@@ -177,22 +178,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 height: double.infinity,
               ),
             ),
-            // グラデーションオーバーレイ（上は透明→下は暗く）
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x22000000), // 上部：画像が見える
-                    Color(0xBB000000), // 下部：テキスト読みやすく
-                  ],
-                  stops: [0.0, 0.35],
+            // グラデーションオーバーレイ（UIと一緒にフェード）
+            AnimatedOpacity(
+              opacity: _uiHidden ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 400),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x22000000),
+                      Color(0xBB000000),
+                    ],
+                    stops: [0.0, 0.35],
+                  ),
                 ),
               ),
             ),
-            // メインUI
-            Scaffold(
+            // 非表示時：全画面タップで復元
+            if (_uiHidden)
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _uiHidden = false),
+                child: const SizedBox.expand(),
+              ),
+            // メインUI（フェードイン/アウト）
+            AnimatedOpacity(
+              opacity: _uiHidden ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 400),
+              child: IgnorePointer(
+                ignoring: _uiHidden,
+                child: Scaffold(
               backgroundColor: Colors.transparent,
               appBar: AppBar(
                 backgroundColor: Colors.black45,
@@ -209,8 +226,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               body: Column(
                 children: [
-                  // 背景画像が見えるエリア
-                  const SizedBox(height: 60),
+                  // 背景画像が見えるエリア（タップでUI非表示）
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _uiHidden = true),
+                    child: SizedBox(
+                      height: 60,
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.keyboard_arrow_up_rounded,
+                                  color: Colors.white30, size: 16),
+                              SizedBox(width: 4),
+                              Text('tap to view',
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.white30,
+                                      letterSpacing: 1)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   // コンテンツパネル
                   Expanded(
                     child: SingleChildScrollView(
@@ -452,6 +494,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ],
+              ),
+                ),
               ),
             ),
           ],
