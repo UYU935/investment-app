@@ -151,4 +151,32 @@ class AppStrings {
   String get eventHistoryTitle => isJa ? 'イベント履歴' : 'Event History';
   String get noEventsMessage => isJa ? 'まだイベントはありません' : 'No events yet';
   String turnAt(int n) => isJa ? '第$n開発期' : 'Period $n';
+
+  // レベルアップ演出
+  String levelUpTitle(int level) {
+    if (isJa) {
+      return '宇宙開発レベル $level に昇格！';
+    } else {
+      return 'Space Dev Level $level Reached!';
+    }
+  }
+
+  String levelUpSubtitle(int level) {
+    switch (level) {
+      case 2:
+        return isJa
+            ? '地球軌道上に衛星通信ネットワークが展開された'
+            : 'Satellite Network deployed in Earth orbit';
+      case 3:
+        return isJa
+            ? '月面にアルテミス街区が誕生した'
+            : 'Artemis District rises on the Moon';
+      case 4:
+        return isJa
+            ? '火星フロンティアへの移住が始まった'
+            : 'Human settlement on Mars has begun';
+      default:
+        return '';
+    }
+  }
 }
