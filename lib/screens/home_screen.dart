@@ -137,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final s = locale.strings;
     final state = game.state;
     final cf = state.monthlyCashFlow;
+    final cfColor = cf >= 0 ? Colors.lightBlue[300]! : Colors.red[300]!;
 
     if (!_cashController.isAnimating) {
       _fromCash = state.cash;
@@ -165,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return Stack(
           fit: StackFit.expand,
           children: [
-            // 背景画像（レベル変化時にアニメーション遷移）
+            // 背景画像
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 1200),
               child: Image.asset(
@@ -176,277 +177,306 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 height: double.infinity,
               ),
             ),
-            // 暗いオーバーレイ
-            Container(color: const Color(0x99000000)),
-            // メインコンテンツ
+            // グラデーションオーバーレイ（上は透明→下は暗く）
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x22000000), // 上部：画像が見える
+                    Color(0xBB000000), // 下部：テキスト読みやすく
+                  ],
+                  stops: [0.0, 0.35],
+                ),
+              ),
+            ),
+            // メインUI
             Scaffold(
               backgroundColor: Colors.transparent,
               appBar: AppBar(
-                title: Text(s.appTitle),
-                backgroundColor: Colors.black54,
+                backgroundColor: Colors.black45,
                 foregroundColor: Colors.white,
                 elevation: 0,
+                title: Text(s.appTitle,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _buildLangSelector(locale),
+                  ),
+                ],
               ),
-              body: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 言語切り替え＆ターン表示
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          s.turn(state.turn),
-                          style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white60,
-                              fontWeight: FontWeight.w500),
-                        ),
-                        _buildLangSelector(locale),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    if (state.marketBoomTurnsLeft > 0)
-                      _buildBanner(s.marketBoom(state.marketBoomTurnsLeft), Colors.green[700]!),
-                    if (state.marketBustTurnsLeft > 0)
-                      _buildBanner(s.marketBust(state.marketBustTurnsLeft), Colors.orange[700]!),
-
-                    // 現金カード
-                    _buildCard(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(s.cashLabel,
-                              style: const TextStyle(fontSize: 16, color: Colors.white60)),
-                          Text(
-                            s.currency(cashDisplay),
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: cashDisplay >= 0 ? Colors.white : Colors.red[300],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // 収支カード
-                    _buildCard(
+              body: Column(
+                children: [
+                  // 背景画像が見えるエリア
+                  const SizedBox(height: 60),
+                  // コンテンツパネル
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildRow(s.salaryLabel, s.currency(state.salary), Colors.lightBlue[300]!),
+                          // ターン & マーケット状況
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(s.passiveIncomeLabel,
-                                  style: const TextStyle(color: Colors.white60)),
-                              Text(
-                                s.currency(passiveDisplay),
-                                style: TextStyle(
-                                    color: Colors.green[300], fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 16, color: Colors.white12),
-                          _buildRow(s.monthlyTotalLabel,
-                              s.currency(state.totalMonthlyIncome), Colors.white),
-                          _buildRow(s.livingCostLabel,
-                              '-${s.currency(state.livingCost)}', Colors.red[300]!),
-                          const Divider(height: 16, color: Colors.white12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(s.monthlyCashFlowLabel,
+                              Text(s.turn(state.turn),
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.white)),
-                              Text(s.currency(cf),
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color: cf >= 0 ? Colors.lightBlue[300] : Colors.red[300])),
+                                      fontSize: 12,
+                                      color: Colors.white60,
+                                      fontWeight: FontWeight.w500)),
+                              const SizedBox(width: 8),
+                              if (state.marketBoomTurnsLeft > 0)
+                                _buildInlineBanner(
+                                    s.marketBoom(state.marketBoomTurnsLeft), Colors.green[600]!),
+                              if (state.marketBustTurnsLeft > 0)
+                                _buildInlineBanner(
+                                    s.marketBust(state.marketBustTurnsLeft), Colors.orange[700]!),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // 宇宙開発レベル
-                    _buildCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(s.spaceLevelLabel,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.white70)),
                           const SizedBox(height: 8),
-                          Text(
-                            s.spaceLevelText(state.spaceDevelopmentLevel),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amberAccent,
-                            ),
-                          ),
-                          if (state.spaceDevelopmentLevel == 4) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              s.colonyProgress(state.spaceColonyCount),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.purpleAccent,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 6),
-                          Text(
-                            s.nextLevelHint(state.spaceDevelopmentLevel, state.spaceColonyCount),
-                            style: const TextStyle(fontSize: 12, color: Colors.white38),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
 
-                    // 継続収益バー
-                    _buildCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(s.incomeBarLabel,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.white70)),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                s.incomeBarDetail(
-                                  s.currency(passiveDisplay),
-                                  s.currency(state.livingCost),
+                          // ── 資金カード（2カラム） ──
+                          _buildCard(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // 左: 現在資金
+                                Expanded(
+                                  flex: 4,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(s.cashLabel,
+                                          style: const TextStyle(
+                                              fontSize: 11, color: Colors.white54)),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        s.currency(cashDisplay),
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          color: cashDisplay >= 0
+                                              ? Colors.white
+                                              : Colors.red[300],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                style: TextStyle(
-                                    color: Colors.green[300], fontSize: 13),
+                                Container(
+                                    width: 1,
+                                    height: 56,
+                                    color: Colors.white12,
+                                    margin: const EdgeInsets.symmetric(horizontal: 12)),
+                                // 右: 予算 / 収益 / コスト / 余力
+                                Expanded(
+                                  flex: 6,
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          _miniStat(s.salaryLabel,
+                                              s.currency(state.salary), Colors.lightBlue[300]!),
+                                          _miniStat(s.passiveIncomeLabel,
+                                              s.currency(passiveDisplay), Colors.green[300]!),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          _miniStat(s.livingCostLabel,
+                                              '-${s.currency(state.livingCost)}',
+                                              Colors.red[300]!),
+                                          _miniStat(s.monthlyCashFlowLabel,
+                                              s.currency(cf), cfColor),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // ── 宇宙開発レベル + 進捗バー ──
+                          _buildCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.rocket_launch_rounded,
+                                        color: Colors.amberAccent, size: 14),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        s.spaceLevelText(state.spaceDevelopmentLevel),
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.amberAccent),
+                                      ),
+                                    ),
+                                    if (state.spaceDevelopmentLevel == 4)
+                                      Text(s.colonyProgress(state.spaceColonyCount),
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.purpleAccent,
+                                              fontWeight: FontWeight.w600)),
+                                    const SizedBox(width: 6),
+                                    Text(s.ownedCount(state.ownedInvestments.length),
+                                        style: const TextStyle(
+                                            fontSize: 11, color: Colors.white38)),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(3),
+                                        child: LinearProgressIndicator(
+                                          value: (passiveDisplay / state.livingCost)
+                                              .clamp(0.0, 1.0),
+                                          minHeight: 6,
+                                          backgroundColor: Colors.white12,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                              Colors.green[400]!),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${((passiveDisplay / state.livingCost) * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.green[300],
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  s.nextLevelHint(
+                                      state.spaceDevelopmentLevel, state.spaceColonyCount),
+                                  style: const TextStyle(fontSize: 10, color: Colors.white30),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // ── ボタン群 ──
+                          ElevatedButton(
+                            onPressed: () => _handleNextTurn(game),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo[500],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              textStyle: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            child: Text(s.nextMonthButton),
+                          ),
+                          const SizedBox(height: 8),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.push(context,
+                                      MaterialPageRoute(
+                                          builder: (_) => const InvestmentListScreen())),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 11),
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(color: Colors.white38),
+                                  ),
+                                  child: Text(s.viewInvestmentsButton, style: const TextStyle(fontSize: 13)),
+                                ),
                               ),
-                              Text(
-                                '${((passiveDisplay / state.livingCost) * 100).clamp(0, 100).toStringAsFixed(0)}%',
-                                style: TextStyle(
-                                    color: Colors.green[300],
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.push(context,
+                                      MaterialPageRoute(
+                                          builder: (_) => const OwnedInvestmentsScreen())),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 11),
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(color: Colors.white38),
+                                  ),
+                                  child: Text(s.myInvestmentsButton, style: const TextStyle(fontSize: 13)),
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: (passiveDisplay / state.livingCost)
-                                  .clamp(0.0, 1.0),
-                              minHeight: 10,
-                              backgroundColor: Colors.white12,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.green[400]!),
-                            ),
+                          const SizedBox(height: 4),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.push(context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const EventHistoryScreen())),
+                                style: TextButton.styleFrom(foregroundColor: Colors.white38),
+                                child: Text(s.eventHistoryButton,
+                                    style: const TextStyle(fontSize: 12)),
+                              ),
+                              const Text('·', style: TextStyle(color: Colors.white24)),
+                              TextButton(
+                                onPressed: () => _confirmReset(context, game, s),
+                                style: TextButton.styleFrom(foregroundColor: Colors.white24),
+                                child: Text(s.resetButton,
+                                    style: const TextStyle(fontSize: 12)),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-
-                    _buildCard(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(s.ownedCountLabel,
-                              style: const TextStyle(color: Colors.white60)),
-                          Text(s.ownedCount(state.ownedInvestments.length),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.white)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    ElevatedButton(
-                      onPressed: () => _handleNextTurn(game),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo[500],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      child: Text(s.nextMonthButton),
-                    ),
-                    const SizedBox(height: 10),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.push(context,
-                                MaterialPageRoute(
-                                    builder: (_) => const InvestmentListScreen())),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white38),
-                            ),
-                            child: Text(s.viewInvestmentsButton),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.push(context,
-                                MaterialPageRoute(
-                                    builder: (_) => const OwnedInvestmentsScreen())),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white38),
-                            ),
-                            child: Text(s.myInvestmentsButton),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    TextButton(
-                      onPressed: () => Navigator.push(context,
-                          MaterialPageRoute(
-                              builder: (_) => const EventHistoryScreen())),
-                      style: TextButton.styleFrom(foregroundColor: Colors.white60),
-                      child: Text(s.eventHistoryButton),
-                    ),
-                    const SizedBox(height: 4),
-
-                    TextButton(
-                      onPressed: () => _confirmReset(context, game, s),
-                      child: Text(s.resetButton,
-                          style: const TextStyle(color: Colors.white30, fontSize: 12)),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _miniStat(String label, String value, Color color) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white38, fontSize: 10, height: 1.2)),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 13, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInlineBanner(String text, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration:
+            BoxDecoration(color: color.withValues(alpha: 0.85), borderRadius: BorderRadius.circular(6)),
+        child: Text(text,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis),
+      ),
     );
   }
 
@@ -459,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           onTap: () => locale.setLocale(code),
           child: Container(
             margin: const EdgeInsets.only(left: 6),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: selected ? Colors.indigo[400] : Colors.white12,
               borderRadius: BorderRadius.circular(20),
@@ -467,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Text(
               code == 'ja' ? 'JP' : 'EN',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: selected ? Colors.white : Colors.white60,
               ),
@@ -478,42 +508,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBanner(String text, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration:
-          BoxDecoration(color: color.withValues(alpha: 0.85), borderRadius: BorderRadius.circular(8)),
-      child: Text(text,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center),
-    );
-  }
-
   Widget _buildCard({required Widget child}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
-        color: const Color(0xBB0d0d1a),
+        color: const Color(0xCC0d0d1a),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white12),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: child,
-    );
-  }
-
-  Widget _buildRow(String label, String value, Color valueColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.white60)),
-          Text(value,
-              style: TextStyle(color: valueColor, fontWeight: FontWeight.w600)),
-        ],
-      ),
     );
   }
 
@@ -522,12 +525,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1a1a2e),
-        title: Text(s.resetConfirmTitle, style: const TextStyle(color: Colors.white)),
-        content: Text(s.resetConfirmMessage, style: const TextStyle(color: Colors.white70)),
+        title: Text(s.resetConfirmTitle,
+            style: const TextStyle(color: Colors.white)),
+        content: Text(s.resetConfirmMessage,
+            style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(s.cancelButton, style: const TextStyle(color: Colors.white60))),
+              child: Text(s.cancelButton,
+                  style: const TextStyle(color: Colors.white60))),
           TextButton(
             onPressed: () {
               game.resetGame();
@@ -542,8 +548,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               _passiveController.reset();
               Navigator.pop(context);
             },
-            child: Text(s.resetButton,
-                style: const TextStyle(color: Colors.red)),
+            child:
+                Text(s.resetButton, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -597,8 +603,6 @@ class _LevelUpPageState extends State<_LevelUpPage>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
-
-    // 3秒後に自動で閉じる
     Future.delayed(const Duration(milliseconds: 3200), () {
       if (mounted) Navigator.of(context).pop();
     });
@@ -617,11 +621,8 @@ class _LevelUpPageState extends State<_LevelUpPage>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // 新レベルの背景画像
           Image.asset(widget.bgAsset, fit: BoxFit.cover),
-          // 暗いオーバーレイ
           Container(color: const Color(0xAA000000)),
-          // メッセージ
           Center(
             child: FadeTransition(
               opacity: _fadeAnim,
@@ -632,7 +633,6 @@ class _LevelUpPageState extends State<_LevelUpPage>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 輝くアイコン
                       Container(
                         width: 100,
                         height: 100,
@@ -641,14 +641,10 @@ class _LevelUpPageState extends State<_LevelUpPage>
                           color: Colors.amber.withValues(alpha: 0.2),
                           border: Border.all(color: Colors.amber, width: 2),
                         ),
-                        child: const Icon(
-                          Icons.rocket_launch_rounded,
-                          size: 54,
-                          color: Colors.amber,
-                        ),
+                        child: const Icon(Icons.rocket_launch_rounded,
+                            size: 54, color: Colors.amber),
                       ),
                       const SizedBox(height: 28),
-                      // "LEVEL UP" ラベル
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 6),
@@ -658,58 +654,42 @@ class _LevelUpPageState extends State<_LevelUpPage>
                           border: Border.all(
                               color: Colors.amber.withValues(alpha: 0.6)),
                         ),
-                        child: const Text(
-                          'LEVEL UP',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber,
-                            letterSpacing: 4,
-                          ),
-                        ),
+                        child: const Text('LEVEL UP',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber,
+                                letterSpacing: 4)),
                       ),
                       const SizedBox(height: 16),
-                      // タイトル（大）
-                      Text(
-                        widget.title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black,
-                              blurRadius: 12,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // サブタイトル
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          widget.subtitle,
+                      Text(widget.title,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white70,
-                            height: 1.5,
-                          ),
-                        ),
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                    color: Colors.black,
+                                    blurRadius: 12,
+                                    offset: Offset(0, 2))
+                              ])),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(widget.subtitle,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white70,
+                                height: 1.5)),
                       ),
                       const SizedBox(height: 40),
-                      // タップヒント
-                      const Text(
-                        'TAP TO CONTINUE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white30,
-                          letterSpacing: 2,
-                        ),
-                      ),
+                      const Text('TAP TO CONTINUE',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white30,
+                              letterSpacing: 2)),
                     ],
                   ),
                 ),
